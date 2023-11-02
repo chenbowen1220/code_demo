@@ -1,3 +1,13 @@
+/*
+ * @Author: chenbw 1069381755@qq.com
+ * @Date: 2023-11-02 23:18:49
+ * @LastEditors: chenbw 1069381755@qq.com
+ * @LastEditTime: 2023-11-02 23:56:43
+ * @FilePath: \code_demo\platform\chip\common\include\co_dsp_lib.h
+ * @Description: 
+ * 
+ * Copyright (c) 2023 by chenbw, All Rights Reserved. 
+ */
 #ifndef __CO_DSP_LIB_H__
 #define __CO_DSP_LIB_H__
 

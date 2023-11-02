@@ -1,4 +1,14 @@
 /*
+ * @Author: chenbw 1069381755@qq.com
+ * @Date: 2023-11-02 23:18:44
+ * @LastEditors: chenbw 1069381755@qq.com
+ * @LastEditTime: 2023-11-02 23:56:35
+ * @FilePath: \code_demo\platform\chip\common\src\co_dsp_lib.c
+ * @Description: 
+ * 
+ * Copyright (c) 2023 by chenbw, All Rights Reserved. 
+ */
+/*
  * INCLUDE FILES
  **************************************************************************************************
  */

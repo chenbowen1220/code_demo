@@ -1,3 +1,13 @@
+/*
+ * @Author: chenbw 1069381755@qq.com
+ * @Date: 2023-11-02 23:05:55
+ * @LastEditors: chenbw 1069381755@qq.com
+ * @LastEditTime: 2023-11-02 23:56:00
+ * @FilePath: \code_demo\platform\chip\hal\include\hal_lm.h
+ * @Description: 
+ * 
+ * Copyright (c) 2023 by chenbw, All Rights Reserved. 
+ */
 #ifndef __HAL_LM_H__
 #define __HAL_LM_H__
 
