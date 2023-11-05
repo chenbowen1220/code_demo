@@ -2,7 +2,7 @@
  * @Author: chenbw 1069381755@qq.com
  * @Date: 2023-11-02 23:05:47
  * @LastEditors: chenbw 1069381755@qq.com
- * @LastEditTime: 2023-11-02 23:56:12
+ * @LastEditTime: 2023-11-05 23:59:24
  * @FilePath: \code_demo\platform\chip\hal\src\hal_lm.c
  * @Description: 
  * 
@@ -35,9 +35,11 @@
 #define FIFO_ID_IS_OUT(id)                  ((id) >= HAL_LM_FIFO_OUT_START)
 #define FIFO_ID_IS_TDM(id)                  (((id) == HAL_LM_FIFO_TDM_I) || ((id) == HAL_LM_FIFO_TDM_O))
 
-#define TDM_TRACK_NUM_IS_VALID(num)         (((num) <= HAL_LM_FIFO_TDM_TRACK_NUM_MAX) && ((num) > 0))
-#define TDM_TRACK_SEL_IS_VALID(start, end)  ((((start) < HAL_LM_FIFO_TDM_TRACK_NUM_MAX) && ((start) >= 0)) && \
-                                            (((end) < HAL_LM_FIFO_TDM_TRACK_NUM_MAX) && ((end) >= 0)) && \
+#define FIFO_TDM_TRACK_NUM_MAX              (16)
+
+#define TDM_TRACK_NUM_IS_VALID(num)         (((num) <= FIFO_TDM_TRACK_NUM_MAX) && ((num) > 0))
+#define TDM_TRACK_SEL_IS_VALID(start, end)  ((((start) < FIFO_TDM_TRACK_NUM_MAX) && ((start) >= 0)) && \
+                                            (((end) < FIFO_TDM_TRACK_NUM_MAX) && ((end) >= 0)) && \
                                             ((end) >= (start)))
 
 #define FIFO_GROUP_NUM_MAX                  (8)
@@ -230,20 +232,20 @@ void hal_lm_fifo_config(hal_lm_fifo_cfg_t *p_st_cfg, uint8_t *p_u8_addr)
  * EXPORTED FUNCTION DEFINITIONS
  **************************************************************************************************
  */
-hal_lm_fifo_err_enum_t hal_lm_fifo_mem_need(uint8_t u8_track_num, uint16_t u16_int_num, uint32_t *p_u32_size)
+hal_lm_err_enum_t hal_lm_fifo_mem_need(uint8_t u8_track_num, uint16_t u16_int_num, uint32_t *p_u32_size)
 {
-    if (!u8_track_num || (u8_track_num > HAL_LM_FIFO_TDM_TRACK_NUM_MAX)) {
+    if (!u8_track_num || (u8_track_num > FIFO_TDM_TRACK_NUM_MAX)) {
         *p_u32_size = 0;
-        return HAL_LM_FIFO_ERR_TRACK_NUM;
+        return HAL_LM_ERR_FIFO_CH_NUM;
     }
 
     *p_u32_size = ALIGN(sizeof(lm_fifo_handle_t), 4) + FIFO_TOTAL_LEN_CALC(u16_int_num) * u8_track_num;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *p_u8_group, void *p_v_mem_malloc)
+hal_lm_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *p_u8_group, void *p_v_mem_malloc)
 {
-    if (!p_u8_group || !p_v_mem_malloc) return HAL_LM_FIFO_ERR_NULL;
+    if (!p_u8_group || !p_v_mem_malloc) return HAL_LM_ERR_NULL;
 
     fifo_group_handle_t *p_st_pre_group = NULL;
     fifo_group_handle_t *p_st_cur_group = u8_io_sel ? s_p_st_first_group_o : s_p_st_first_group_i;
@@ -275,7 +277,7 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *
         if (p_st_cur_group->u8_st == 0) {
             p_st_cur_group->u8_st = 1;
             *p_u8_group = p_st_cur_group->u8_id;
-            return HAL_LM_FIFO_OK;
+            return HAL_LM_OK;
         } else if (p_st_cur_group->u8_id == 0) {
             goto ERR;
         }
@@ -291,19 +293,19 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *
 
 ERR:
     *p_u8_group = 0xFF;
-    return HAL_LM_FIFO_ERR_GROUP;
+    return HAL_LM_ERR_FIFO_GROUP;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_release(uint8_t u8_io_sel, uint8_t u8_group, void *p_v_mem_free)
+hal_lm_err_enum_t hal_lm_fifo_used_group_release(uint8_t u8_io_sel, uint8_t u8_group, void *p_v_mem_free)
 {
-    if (u8_group >= FIFO_GROUP_NUM_MAX) return HAL_LM_FIFO_ERR_GROUP_ID;
-    if (!p_v_mem_free) return HAL_LM_FIFO_ERR_NULL;
+    if (u8_group >= FIFO_GROUP_NUM_MAX) return HAL_LM_ERR_FIFO_GROUP_ID;
+    if (!p_v_mem_free) return HAL_LM_ERR_NULL;
 
     fifo_group_handle_t *p_st_cur_group = u8_io_sel ? s_p_st_first_group_o : s_p_st_first_group_i;
 
     for (;;) {
         if (!p_st_cur_group) {
-            return HAL_LM_FIFO_ERR_GROUP_ID;
+            return HAL_LM_ERR_FIFO_GROUP_ID;
         }
 
         if (p_st_cur_group->u8_id == u8_group) {
@@ -321,9 +323,9 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_release(uint8_t u8_io_sel, uint8_t
                 p_st_nxt_group->p_v_pre = p_st_pre_group;
                 hal_mem_free *p_v_free = (hal_mem_free *)p_v_mem_free;
                 p_v_free(p_st_cur_group);
-                return HAL_LM_FIFO_OK;
+                return HAL_LM_OK;
             } else {
-                return HAL_LM_FIFO_ERR_GROUP_ST;
+                return HAL_LM_ERR_FIFO_GROUP_ST;
             }
         }
 
@@ -331,15 +333,15 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_release(uint8_t u8_io_sel, uint8_t
     }
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_en_cfg(uint8_t u8_io_sel, uint8_t u8_group, uint8_t u8_en)
+hal_lm_err_enum_t hal_lm_fifo_used_group_en_cfg(uint8_t u8_io_sel, uint8_t u8_group, uint8_t u8_en)
 {
-    if (u8_group >= FIFO_GROUP_NUM_MAX) return HAL_LM_FIFO_ERR_GROUP_ID;
+    if (u8_group >= FIFO_GROUP_NUM_MAX) return HAL_LM_ERR_FIFO_GROUP_ID;
 
     fifo_group_handle_t *p_st_cur_group = u8_io_sel ? s_p_st_first_group_o : s_p_st_first_group_i;
 
     for (;;) {
         if (!p_st_cur_group) {
-            return HAL_LM_FIFO_ERR_GROUP_ID;
+            return HAL_LM_ERR_FIFO_GROUP_ID;
         }
 
         if (p_st_cur_group->u8_id == u8_group) {
@@ -348,7 +350,7 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_en_cfg(uint8_t u8_io_sel, uint8_t 
                 if (p_st_cur_group->u8_st == 2) {
                     p_st_cur_group->u8_st = 3;
                 } else {
-                    return HAL_LM_FIFO_ERR_GROUP_ST;
+                    return HAL_LM_ERR_FIFO_GROUP_ST;
                 }
 
                 /* TODO: add register config, seperate in out */
@@ -358,7 +360,7 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_en_cfg(uint8_t u8_io_sel, uint8_t 
                 if (p_st_cur_group->u8_st == 3) {
                     p_st_cur_group->u8_st = 2;
                 } else {
-                    return HAL_LM_FIFO_ERR_GROUP_ST;
+                    return HAL_LM_ERR_FIFO_GROUP_ST;
                 }
 
                 /* TODO: add register config, seperate in out */
@@ -371,12 +373,12 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_used_group_en_cfg(uint8_t u8_io_sel, uint8_t 
         p_st_cur_group = p_st_cur_group->p_v_nxt;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_en_cfg(hal_lm_fifo_en_cfg_t *p_st_en, uint8_t u8_en)
+hal_lm_err_enum_t hal_lm_fifo_en_cfg(hal_lm_fifo_en_cfg_t *p_st_en, uint8_t u8_en)
 {
-    if (!p_st_en) return HAL_LM_FIFO_ERR_NULL;
+    if (!p_st_en) return HAL_LM_ERR_NULL;
 
     uint32_t *p_u32_en = (uint32_t *)p_st_en;
     uint32_t u32_value = 0; /* TODO: get from register */
@@ -399,7 +401,7 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_en_cfg(hal_lm_fifo_en_cfg_t *p_st_en, uint8_t
 
     /* TODO: add register set */
     ;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
 void *hal_lm_fifo_init(hal_lm_fifo_cfg_t *p_st_cfg, void *p_v_mem_malloc)
@@ -418,7 +420,7 @@ void *hal_lm_fifo_init(hal_lm_fifo_cfg_t *p_st_cfg, void *p_v_mem_malloc)
     } else {
         /* need to malloc addr */
         if (!p_v_mem_malloc) {
-            p_st_cfg->u8_err_code = HAL_LM_FIFO_ERR_MALLOC;
+            p_st_cfg->u8_err_code = HAL_LM_ERR_MALLOC;
             return NULL;
         }
 
@@ -429,12 +431,12 @@ void *hal_lm_fifo_init(hal_lm_fifo_cfg_t *p_st_cfg, void *p_v_mem_malloc)
             u8_track_num = p_st_cfg->u8_tdm_ch_end - p_st_cfg->u8_tdm_ch_start + 1;
 
             if (!TDM_TRACK_NUM_IS_VALID(u8_track_num)) {
-                p_st_cfg->u8_err_code = HAL_LM_FIFO_ERR_TRACK_NUM;
+                p_st_cfg->u8_err_code = HAL_LM_ERR_FIFO_CH_NUM;
                 return NULL;
             }
 
             if (!TDM_TRACK_SEL_IS_VALID(p_st_cfg->u8_tdm_ch_start, p_st_cfg->u8_tdm_ch_end)) {
-                p_st_cfg->u8_err_code = HAL_LM_FIFO_ERR_TRACK_SEL;
+                p_st_cfg->u8_err_code = HAL_LM_ERR_FIFO_TRACK_SEL;
                 return NULL;
             }
         }
@@ -444,7 +446,7 @@ void *hal_lm_fifo_init(hal_lm_fifo_cfg_t *p_st_cfg, void *p_v_mem_malloc)
         p_u8_addr = (uint8_t *)p_v_malloc(u32_size);
 
         if (p_u8_addr == NULL) {
-            p_st_cfg->u8_err_code = HAL_LM_FIFO_ERR_MALLOC;
+            p_st_cfg->u8_err_code = HAL_LM_ERR_MALLOC;
             return NULL;
         }
 
@@ -480,14 +482,14 @@ void *hal_lm_fifo_init(hal_lm_fifo_cfg_t *p_st_cfg, void *p_v_mem_malloc)
     return (void *)p_st_handle;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_deinit(void *p_v_handle, void *p_v_mem_free)
+hal_lm_err_enum_t hal_lm_fifo_deinit(void *p_v_handle, void *p_v_mem_free)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
 
-    if (hal_lm_fifo_int_clear(p_st_handle) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_DEINIT;
+    if (hal_lm_fifo_int_clear(p_st_handle) != HAL_LM_OK) {
+        return HAL_LM_ERR_DEINIT;
     }
     
     fifo_group_handle_t *p_st_cur_group = FIFO_ID_IS_OUT(p_st_handle->u8_id) ? s_p_st_first_group_o : s_p_st_first_group_i;
@@ -536,16 +538,16 @@ NEXT:
         if (p_v_free) {
             p_v_free(p_st_handle);
         } else {
-            return HAL_LM_FIFO_ERR_DEINIT;
+            return HAL_LM_ERR_DEINIT;
         }
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_enable(void *p_v_handle)
+hal_lm_err_enum_t hal_lm_fifo_enable(void *p_v_handle)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
 
@@ -574,31 +576,31 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_enable(void *p_v_handle)
     p_st_handle->u16_ptr = 0;
     /* TODO: set fifo en to register according to p_st_handle->u8_id */
     ;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_disable(void *p_v_handle)
+hal_lm_err_enum_t hal_lm_fifo_disable(void *p_v_handle)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     /* TODO: set fifo dis to register according to p_st_handle->u8_id */
     ;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_in_which_group_get(void *p_v_handle, uint8_t *p_u8_group)
+hal_lm_err_enum_t hal_lm_fifo_in_which_group_get(void *p_v_handle, uint8_t *p_u8_group)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     *p_u8_group = 0; /* TODO: get from register according to p_st_handle->u8_id */
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_int_config(void *p_v_handle, hal_lm_fifo_int_type_enum_t e_int, void *p_v_callback, uint16_t u16_int_num)
+hal_lm_err_enum_t hal_lm_fifo_int_config(void *p_v_handle, hal_lm_fifo_int_type_enum_t e_int, void *p_v_callback, uint16_t u16_int_num)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_value = 0;
@@ -632,18 +634,18 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_int_config(void *p_v_handle, hal_lm_fifo_int_
                 p_st_cur_group = p_st_nxt_group;
             } else {
                 if (p_st_nxt_group->u32_fifo_bit & CO_BIT(p_st_handle->u8_id)) {
-                    return HAL_LM_FIFO_ERR_GROUP_ID;
+                    return HAL_LM_ERR_FIFO_GROUP_ID;
                 }
             }
 
             p_st_nxt_group = p_st_nxt_group->p_v_nxt;
         }
 
-        if (!p_st_cur_group == NULL) return HAL_LM_FIFO_ERR_GROUP;
+        if (!p_st_cur_group == NULL) return HAL_LM_ERR_FIFO_GROUP;
 
         if (p_st_cur_group->u8_st == 1) p_st_cur_group->u8_st = 2;
 
-        if (p_st_cur_group->u8_st != 2) return HAL_LM_FIFO_ERR_GROUP_ST;
+        if (p_st_cur_group->u8_st != 2) return HAL_LM_ERR_FIFO_GROUP_ST;
 
         p_st_cur_group->p_v_callback = p_v_callback;
         p_st_cur_group->u32_fifo_bit |= CO_BIT(p_st_handle->u8_id);
@@ -663,7 +665,7 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_int_config(void *p_v_handle, hal_lm_fifo_int_
     }
 
     case HAL_LM_FIFO_NULL_INT:
-        return HAL_LM_FIFO_OK;
+        return HAL_LM_OK;
     }
 
     /* TODO: set io cnt thre register */
@@ -679,12 +681,12 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_int_config(void *p_v_handle, hal_lm_fifo_int_
         ;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_int_clear(void *p_v_handle)
+hal_lm_err_enum_t hal_lm_fifo_int_clear(void *p_v_handle)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_value = 0;
@@ -737,11 +739,11 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_int_clear(void *p_v_handle)
             p_st_nxt_group = p_st_nxt_group->p_v_nxt;
         }
 
-        if (!p_st_cur_group) return HAL_LM_FIFO_ERR_GROUP_ID;
+        if (!p_st_cur_group) return HAL_LM_ERR_FIFO_GROUP_ID;
 
         if (p_st_cur_group->u8_st == 2) p_st_cur_group->u8_st = 1;
 
-        if (p_st_cur_group->u8_st != 1) return HAL_LM_FIFO_ERR_GROUP_ST;
+        if (p_st_cur_group->u8_st != 1) return HAL_LM_ERR_FIFO_GROUP_ST;
 
         /* TODO: 清除该 group 中所有 FIFO 对应的中断状态 */
         ;
@@ -761,54 +763,54 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_int_clear(void *p_v_handle)
     }
 
     case HAL_LM_FIFO_NULL_INT:
-        return HAL_LM_FIFO_OK;
+        return HAL_LM_OK;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_start_addr_get(void *p_v_handle, uint32_t *p_u32_addr)
+hal_lm_err_enum_t hal_lm_fifo_start_addr_get(void *p_v_handle, uint32_t *p_u32_addr)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     *p_u32_addr = u32_addr;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_int_num_get(void *p_v_handle, uint16_t *p_u16_int_num)
+hal_lm_err_enum_t hal_lm_fifo_int_num_get(void *p_v_handle, uint16_t *p_u16_int_num)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     u16_fifo_len >>= 3;
     *p_u16_int_num = u16_fifo_len;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_rw_ptr_get(void *p_v_handle, uint16_t *p_u16_ptr)
+hal_lm_err_enum_t hal_lm_fifo_rw_ptr_get(void *p_v_handle, uint16_t *p_u16_ptr)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     *p_u16_ptr = p_st_handle->u16_ptr;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_rw_ptr_set(void *p_v_handle, uint16_t u16_ptr)
+hal_lm_err_enum_t hal_lm_fifo_rw_ptr_set(void *p_v_handle, uint16_t u16_ptr)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     p_st_handle->u16_ptr = u16_ptr;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_ro_ptr_get(void *p_v_handle, uint16_t *p_u16_ptr)
+hal_lm_err_enum_t hal_lm_fifo_ro_ptr_get(void *p_v_handle, uint16_t *p_u16_ptr)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
 
@@ -818,12 +820,12 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_ro_ptr_get(void *p_v_handle, uint16_t *p_u16_
         *p_u16_ptr = 0; /* TODO: get rd ptr from register */
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_valid_num_get(void *p_v_handle, uint16_t *p_u16_valid_num)
+hal_lm_err_enum_t hal_lm_fifo_valid_num_get(void *p_v_handle, uint16_t *p_u16_valid_num)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
@@ -847,12 +849,12 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_valid_num_get(void *p_v_handle, uint16_t *p_u
         }
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_proc_addr_get(void *p_v_handle, uint32_t *p_u32_proc_addr, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_proc_addr_get(void *p_v_handle, uint32_t *p_u32_proc_addr, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
@@ -872,12 +874,12 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_proc_addr_get(void *p_v_handle, uint32_t *p_u
         *p_u32_proc_addr = u32_start_addr + (p_st_handle->u16_ptr << 2);
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_proc_addr_set(void *p_v_handle, uint32_t u32_proc_addr, uint16_t u16_proc_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_proc_addr_set(void *p_v_handle, uint32_t u32_proc_addr, uint16_t u16_proc_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
@@ -900,36 +902,36 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_proc_addr_set(void *p_v_handle, uint32_t u32_
     }
 
     if ((u16_ptr >> 2) != p_st_handle->u16_ptr) {
-        return HAL_LM_FIFO_ERR_PTR;
+        return HAL_LM_ERR_FIFO_PTR;
     }
 
     u16_ptr += (u16_proc_num << 2);
     u16_ptr = (u16_ptr >= u16_fifo_len) ? (u16_ptr - u16_fifo_len) : u16_ptr;
     p_st_handle->u16_ptr = u16_ptr >> 2;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_total_len_get(void *p_v_handle, uint16_t *p_u16_total_len)
+hal_lm_err_enum_t hal_lm_fifo_total_len_get(void *p_v_handle, uint16_t *p_u16_total_len)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     *p_u16_total_len = u16_fifo_len;
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_read_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_read_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_src = (int32_t *)u32_proc_addr;
@@ -949,24 +951,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_read_s32(void *p_v_handle, void *p_v_buf, uin
         co_dsp_dup_q31(p_s32_src, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_read_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_read_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_src = (int32_t *)u32_proc_addr;
@@ -986,24 +988,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_read_s24(void *p_v_handle, void *p_v_buf, uin
         co_dsp_convert_q31_q23(p_s32_src, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_read_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_read_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_src = (int32_t *)u32_proc_addr;
@@ -1023,24 +1025,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_read_s16(void *p_v_handle, void *p_v_buf, uin
         co_dsp_convert_q31_q15(p_s32_src, p_s16_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_read_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_read_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_src = (int32_t *)u32_proc_addr;
@@ -1060,42 +1062,42 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_read_s08(void *p_v_handle, void *p_v_buf, uin
         co_dsp_convert_q31_q7(p_s32_src, p_s8_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_read_null(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_read_null(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_write_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_write_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_src = (int32_t *)p_v_buf;
@@ -1115,24 +1117,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_write_s32(void *p_v_handle, void *p_v_buf, ui
         co_dsp_dup_q31(p_s32_src, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_write_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_write_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_src = (int32_t *)p_v_buf;
@@ -1152,24 +1154,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_write_s24(void *p_v_handle, void *p_v_buf, ui
         co_dsp_convert_q23_q31(p_s32_src, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_write_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_write_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int16_t *p_s16_src = (int16_t *)p_v_buf;
@@ -1189,24 +1191,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_write_s16(void *p_v_handle, void *p_v_buf, ui
         co_dsp_convert_q15_q31(p_s16_src, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_write_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_write_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int8_t *p_s8_src = (int8_t *)p_v_buf;
@@ -1226,24 +1228,24 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_write_s08(void *p_v_handle, void *p_v_buf, ui
         co_dsp_convert_q7_q31(p_s8_src, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
 
-hal_lm_fifo_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel)
+hal_lm_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel)
 {
-    if (!p_v_handle) return HAL_LM_FIFO_NO_INIT;
+    if (!p_v_handle) return HAL_LM_NO_INIT;
 
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     uint32_t u32_start_addr = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint16_t u16_fifo_len = 0; /* TODO: get from register according to p_st_handle->u8_id */
     uint32_t u32_proc_addr;
 
-    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_get(p_st_handle, &u32_proc_addr, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
     int32_t *p_s32_dst = (int32_t *)u32_proc_addr;
@@ -1261,9 +1263,9 @@ hal_lm_fifo_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_dat
         co_dsp_set_q31(0, p_s32_dst, u16_data_num);
     }
 
-    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_FIFO_OK) {
-        return HAL_LM_FIFO_ERR_PROC_ADDR;
+    if (hal_lm_fifo_proc_addr_set(p_st_handle, u32_proc_addr, u16_data_num, u8_tdm_sel) != HAL_LM_OK) {
+        return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
-    return HAL_LM_FIFO_OK;
+    return HAL_LM_OK;
 }
