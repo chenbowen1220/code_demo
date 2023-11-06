@@ -2,7 +2,7 @@
  * @Author: chenbw 1069381755@qq.com
  * @Date: 2023-11-02 23:05:55
  * @LastEditors: chenbw 1069381755@qq.com
- * @LastEditTime: 2023-11-06 00:26:22
+ * @LastEditTime: 2023-11-06 22:52:54
  * @FilePath: \code_demo\platform\chip\hal\include\hal_lm.h
  * @Description: 
  * 
@@ -21,6 +21,7 @@
  * MACRO DEFINES
  **************************************************************************************************
  */
+#define HAL_LM_FIFO_WITH_TDM
 
 /*
  * ENUM DEFINES
@@ -41,9 +42,11 @@ typedef enum _hal_lm_fifo_id_enum {
     HAL_LM_FIFO_I2S3_I_R,                       /* 11 */
     HAL_LM_FIFO_SPDIF_I_L,                      /* 12 */
     HAL_LM_FIFO_SPDIF_I_R,                      /* 13 */
+#ifdef HAL_LM_FIFO_WITH_TDM
     HAL_LM_FIFO_TDM0_I,                         /* 14 */
     HAL_LM_FIFO_TDM1_I,                         /* 15 */
-    HAL_LM_FIFO_IN_END = HAL_LM_FIFO_TDM1_I,
+#endif
+    HAL_LM_FIFO_IN_END = 15,
 
     HAL_LM_FIFO_OUT_START,
     HAL_LM_FIFO_DAC_0 = HAL_LM_FIFO_OUT_START,  /* 16 */
@@ -60,10 +63,12 @@ typedef enum _hal_lm_fifo_id_enum {
     HAL_LM_FIFO_I2S3_O_R,                       /* 27 */
     HAL_LM_FIFO_SPDIF_O_L,                      /* 28 */
     HAL_LM_FIFO_SPDIF_O_R,                      /* 29 */
+#ifdef HAL_LM_FIFO_WITH_TDM
     HAL_LM_FIFO_TDM0_O,                         /* 30 */
     HAL_LM_FIFO_TDM1_O,                         /* 31 */
+#endif
 
-    HAL_LM_FIFO_NUM,
+    HAL_LM_FIFO_NUM = 32,
 } hal_lm_fifo_id_enum_t;
 
 typedef enum _hal_lm_fifo_int_type_enum {
@@ -114,8 +119,10 @@ typedef struct _hal_lm_fifo_cfg {
     uint16_t u16_half_depth;    /* fifo 一半的深度, 必须为 u16_int_num 的整数倍, words */
     uint16_t u16_int_num;       /* fifo 中断点数, words */
     uint8_t  u8_int_type;       /* fifo 中断类型, ref hal_lm_fifo_int_type_enum_t */
+#ifdef HAL_LM_FIFO_WITH_TDM
     uint8_t  u8_tdm_ch_start;   /* fifo 为 TDM 时, 起始通道号, valid with u8_id==HAL_LM_FIFO_TDM_I||u8_id==HAL_LM_FIFO_TDM_O*/
     uint8_t  u8_tdm_ch_end;     /* fifo 为 TDM 时, 终止通道号, valid with u8_id==HAL_LM_FIFO_TDM_I||u8_id==HAL_LM_FIFO_TDM_O*/
+#endif
     uint8_t  u8_group;          /* fifo in which group, set by hal_lm_fifo_free_group_get */
     uint8_t  u8_id;             /* fifo id, ref hal_lm_fifo_id_enum_t */
     uint8_t  u8_err_code;       /* ref hal_lm_err_enum_t */
@@ -136,11 +143,15 @@ typedef struct _hal_lm_fifo_en_cfg {
                         u32_i2s3_i_r    : 1, /* [11] 0:no proc, 1:do proc */
                         u32_spdif_i_l   : 1, /* [12] 0:no proc, 1:do proc */
                         u32_spdif_i_r   : 1, /* [13] 0:no proc, 1:do proc */
+#ifdef HAL_LM_FIFO_WITH_TDM
                         u32_tdm0_i      : 1, /* [14] 0:no proc, 1:do proc */
                         u32_tdm1_i      : 1, /* [15] 0:no proc, 1:do proc */
+#else
+                        u32_rfu_0       : 2,
+#endif
                         u32_dac_0       : 1, /* [16] 0:no proc, 1:do proc */
                         u32_dac_1       : 1, /* [17] 0:no proc, 1:do proc */
-                        u32_rfu_0       : 2,
+                        u32_rfu_1       : 2,
                         u32_i2s0_o_l    : 1, /* [20] 0:no proc, 1:do proc */
                         u32_i2s0_o_r    : 1, /* [21] 0:no proc, 1:do proc */
                         u32_i2s1_o_l    : 1, /* [22] 0:no proc, 1:do proc */
@@ -151,8 +162,12 @@ typedef struct _hal_lm_fifo_en_cfg {
                         u32_i2s3_o_r    : 1, /* [27] 0:no proc, 1:do proc */
                         u32_spdif_o_l   : 1, /* [28] 0:no proc, 1:do proc */
                         u32_spdif_o_r   : 1, /* [29] 0:no proc, 1:do proc */
+#ifdef HAL_LM_FIFO_WITH_TDM
                         u32_tdm0_o      : 1, /* [30] 0:no proc, 1:do proc */
                         u32_tdm1_o      : 1; /* [31] 0:no proc, 1:do proc */
+#else
+                        u32_rfu_2       : 2;
+#endif
 } hal_lm_fifo_en_cfg_t;
 
 typedef struct _hal_lm_dma_normal_cfg {
@@ -177,6 +192,7 @@ typedef struct _hal_lm_dma_cfg {
     void *p_v_env;              /* 上层模块指针 */
     void *p_v_callback;         /* dma int callback, ref hal_lm_callback */
     void *p_v_cfg;              /* pass hal_lm_dma_normal_cfg_t or hal_lm_dma_sg_cfg_t according to e_id */
+    uint8_t *p_u8_addr;         /* dma used start addr, 上层传递或内部开辟，如果上层传递，总长度需要通过 hal_lm_dma_mem_need 获取 */
     hal_lm_dma_id_enum_t e_id;  /* ref hal_lm_dma_id_enum_t */
     uint16_t u16_num;           /* proc num */
     uint8_t u8_err_code;        /* ref hal_lm_err_enum_t */
@@ -191,15 +207,17 @@ typedef struct _hal_lm_dma_cfg {
  * EXPORTED FUNCTION DECLARATIONS
  **************************************************************************************************
  */
-hal_lm_err_enum_t hal_lm_fifo_mem_need(uint8_t u8_track_num, uint16_t u16_int_num, uint32_t *p_u32_size);
+hal_lm_err_enum_t hal_lm_fifo_group_mem_need(uint32_t *p_u32_size);
 
-hal_lm_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *p_u8_group, void *p_v_mem_malloc);
+hal_lm_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *p_u8_addr, void *p_v_mem_malloc, uint8_t *p_u8_group);
 
 hal_lm_err_enum_t hal_lm_fifo_used_group_release(uint8_t u8_io_sel, uint8_t u8_group, void *p_v_mem_free);
 
 hal_lm_err_enum_t hal_lm_fifo_used_group_en_cfg(uint8_t u8_io_sel, uint8_t u8_group, uint8_t u8_en);
 
 hal_lm_err_enum_t hal_lm_fifo_en_cfg(hal_lm_fifo_en_cfg_t *p_st_en, uint8_t u8_en);
+
+hal_lm_err_enum_t hal_lm_fifo_mem_need(uint8_t u8_ch_num, uint16_t u16_half_depth, uint32_t *p_u32_size);
 
 void *hal_lm_fifo_init(hal_lm_fifo_cfg_t *p_st_cfg, void *p_v_mem_malloc);
 
@@ -208,6 +226,8 @@ hal_lm_err_enum_t hal_lm_fifo_deinit(void *p_v_handle, void *p_v_mem_free);
 hal_lm_err_enum_t hal_lm_fifo_enable(void *p_v_handle);
 
 hal_lm_err_enum_t hal_lm_fifo_disable(void *p_v_handle);
+
+hal_lm_err_enum_t hal_lm_fifo_id_get(void *p_v_handle, uint8_t *p_u8_id);
 
 hal_lm_err_enum_t hal_lm_fifo_in_which_group_get(void *p_v_handle, uint8_t *p_u8_group);
 
@@ -252,5 +272,29 @@ hal_lm_err_enum_t hal_lm_fifo_write_s16(void *p_v_handle, void *p_v_buf, uint16_
 hal_lm_err_enum_t hal_lm_fifo_write_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
 
 hal_lm_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+
+hal_lm_err_enum_t hal_lm_dma_mem_need(uint32_t *p_u32_size);
+
+void *hal_lm_dma_init(hal_lm_dma_cfg_t *p_st_cfg, void *p_v_mem_malloc);
+
+hal_lm_err_enum_t hal_lm_dma_deinit(void *p_v_handle, void *p_v_mem_free);
+
+hal_lm_err_enum_t hal_lm_dma_data_num_set(void *p_v_handle, uint16_t u16_data_num);
+
+hal_lm_err_enum_t hal_lm_dma_sg_scatter_size_set(void *p_v_handle, uint8_t u8_scatter_size);
+
+hal_lm_err_enum_t hal_lm_dma_enable(void *p_v_handle, uint8_t u8_int_en);
+
+hal_lm_err_enum_t hal_lm_dma_disable(void *p_v_handle);
+
+hal_lm_err_enum_t hal_lm_dma_busy_get(void *p_v_handle, uint8_t *p_u8_busy);
+
+hal_lm_err_enum_t hal_lm_dma_done_get(void *p_v_handle, uint8_t *p_u8_done);
+
+hal_lm_err_enum_t hal_lm_dma_sg_result_get(void *p_v_handle, uint32_t *p_u32_addr, uint32_t *p_u32_data);
+
+hal_lm_err_enum_t hal_lm_dma_cpy(hal_lm_dma_id_enum_t e_id, uint32_t u32_src_addr, uint32_t u32_dst_addr, uint16_t u16_num);
+
+hal_lm_err_enum_t hal_lm_dma_set(hal_lm_dma_id_enum_t e_id, uint32_t u32_value, uint32_t u32_dst_addr, uint16_t u16_num);
 
 #endif /* __HAL_LM_H__ */

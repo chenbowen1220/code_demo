@@ -2,7 +2,7 @@
  * @Author: chenbw 1069381755@qq.com
  * @Date: 2023-11-02 23:05:47
  * @LastEditors: chenbw 1069381755@qq.com
- * @LastEditTime: 2023-11-05 23:59:24
+ * @LastEditTime: 2023-11-06 23:00:11
  * @FilePath: \code_demo\platform\chip\hal\src\hal_lm.c
  * @Description: 
  * 
@@ -232,18 +232,12 @@ void hal_lm_fifo_config(hal_lm_fifo_cfg_t *p_st_cfg, uint8_t *p_u8_addr)
  * EXPORTED FUNCTION DEFINITIONS
  **************************************************************************************************
  */
-hal_lm_err_enum_t hal_lm_fifo_mem_need(uint8_t u8_track_num, uint16_t u16_int_num, uint32_t *p_u32_size)
+hal_lm_err_enum_t hal_lm_fifo_group_mem_need(uint32_t *p_u32_size)
 {
-    if (!u8_track_num || (u8_track_num > FIFO_TDM_TRACK_NUM_MAX)) {
-        *p_u32_size = 0;
-        return HAL_LM_ERR_FIFO_CH_NUM;
-    }
-
-    *p_u32_size = ALIGN(sizeof(lm_fifo_handle_t), 4) + FIFO_TOTAL_LEN_CALC(u16_int_num) * u8_track_num;
     return HAL_LM_OK;
 }
 
-hal_lm_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *p_u8_group, void *p_v_mem_malloc)
+hal_lm_err_enum_t hal_lm_fifo_unused_group_get(uint8_t u8_io_sel, uint8_t *p_u8_addr, void *p_v_mem_malloc, uint8_t *p_u8_group)
 {
     if (!p_u8_group || !p_v_mem_malloc) return HAL_LM_ERR_NULL;
 
@@ -401,6 +395,17 @@ hal_lm_err_enum_t hal_lm_fifo_en_cfg(hal_lm_fifo_en_cfg_t *p_st_en, uint8_t u8_e
 
     /* TODO: add register set */
     ;
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_fifo_mem_need(uint8_t u8_track_num, uint16_t u16_int_num, uint32_t *p_u32_size)
+{
+    if (!u8_track_num || (u8_track_num > FIFO_TDM_TRACK_NUM_MAX)) {
+        *p_u32_size = 0;
+        return HAL_LM_ERR_FIFO_CH_NUM;
+    }
+
+    *p_u32_size = ALIGN(sizeof(lm_fifo_handle_t), 4) + FIFO_TOTAL_LEN_CALC(u16_int_num) * u8_track_num;
     return HAL_LM_OK;
 }
 
@@ -586,6 +591,11 @@ hal_lm_err_enum_t hal_lm_fifo_disable(void *p_v_handle)
     lm_fifo_handle_t *p_st_handle = (lm_fifo_handle_t *)p_v_handle;
     /* TODO: set fifo dis to register according to p_st_handle->u8_id */
     ;
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_fifo_id_get(void *p_v_handle, uint8_t *p_u8_id)
+{
     return HAL_LM_OK;
 }
 
@@ -1267,5 +1277,65 @@ hal_lm_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_data_num
         return HAL_LM_ERR_FIFO_PROC_ADDR;
     }
 
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_mem_need(uint32_t *p_u32_size)
+{
+    return HAL_LM_OK;
+}
+
+void *hal_lm_dma_init(hal_lm_dma_cfg_t *p_st_cfg, void *p_v_mem_malloc)
+{
+    return NULL;
+}
+
+hal_lm_err_enum_t hal_lm_dma_deinit(void *p_v_handle, void *p_v_mem_free)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_data_num_set(void *p_v_handle, uint16_t u16_data_num)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_sg_scatter_size_set(void *p_v_handle, uint8_t u8_scatter_size)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_enable(void *p_v_handle, uint8_t u8_int_en)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_disable(void *p_v_handle)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_busy_get(void *p_v_handle, uint8_t *p_u8_busy)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_done_get(void *p_v_handle, uint8_t *p_u8_done)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_sg_result_get(void *p_v_handle, uint32_t *p_u32_addr, uint32_t *p_u32_data)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_cpy(hal_lm_dma_id_enum_t e_id, uint32_t u32_src_addr, uint32_t u32_dst_addr, uint16_t u16_num)
+{
+    return HAL_LM_OK;
+}
+
+hal_lm_err_enum_t hal_lm_dma_set(hal_lm_dma_id_enum_t e_id, uint32_t u32_value, uint32_t u32_dst_addr, uint16_t u16_num)
+{
     return HAL_LM_OK;
 }
