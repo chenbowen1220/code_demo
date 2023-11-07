@@ -2,7 +2,7 @@
  * @Author: chenbw 1069381755@qq.com
  * @Date: 2023-11-02 23:05:55
  * @LastEditors: chenbw 1069381755@qq.com
- * @LastEditTime: 2023-11-06 22:52:54
+ * @LastEditTime: 2023-11-08 00:00:53
  * @FilePath: \code_demo\platform\chip\hal\include\hal_lm.h
  * @Description: 
  * 
@@ -253,25 +253,25 @@ hal_lm_err_enum_t hal_lm_fifo_proc_addr_set(void *p_v_handle, uint32_t u32_proc_
 
 hal_lm_err_enum_t hal_lm_fifo_total_len_get(void *p_v_handle, uint16_t *p_u16_total_len);
 
-hal_lm_err_enum_t hal_lm_fifo_read_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_read_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_read_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_read_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_read_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_read_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_read_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_read_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_read_null(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_read_null(void *p_v_handle, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_write_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_write_s32(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_write_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_write_s24(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_write_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_write_s16(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_write_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_write_s08(void *p_v_handle, void *p_v_buf, uint16_t u16_data_num);
 
-hal_lm_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_data_num, uint8_t u8_tdm_sel);
+hal_lm_err_enum_t hal_lm_fifo_write_zero(void *p_v_handle, uint16_t u16_data_num);
 
 hal_lm_err_enum_t hal_lm_dma_mem_need(uint32_t *p_u32_size);
 
